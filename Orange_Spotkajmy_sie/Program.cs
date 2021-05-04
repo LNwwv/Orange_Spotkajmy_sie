@@ -12,7 +12,13 @@ namespace Orange_Spotkajmy_sie
         {
             //how long will the meeting take?
             //Change to set up meeting duration meeting time
-            var meetingDurationInMinutes = 60;
+            var meetingDurationInMinutes = 0;
+
+            //Set up default 30 minutes duration
+            if (meetingDurationInMinutes == 0)
+            {
+                meetingDurationInMinutes = 30;
+            }
 
             //create two calendars to compare
             var calendarObj1 = new DataModel
