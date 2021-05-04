@@ -1,5 +1,11 @@
 ﻿namespace Orange_Spotkajmy_sie
 {
+    public class CalendarModel
+    {
+        public string Name { get; set; }
+        public DataModel[] DataModels { get; set; }
+    }
+
     public class DataModel
     {
         public Working_Hours working_hours { get; set; }

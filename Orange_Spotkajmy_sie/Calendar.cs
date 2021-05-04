@@ -7,6 +7,8 @@ public class Calendar
 
     public List<DateTimeInterval> PlannedMeetings { get; set; }
 
+    
+
     public List<DateTimeInterval> GetFreeTimeIntervals()
     {
         var workingHours = WorkingHours;

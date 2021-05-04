@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using Newtonsoft.Json;
 
 namespace Orange_Spotkajmy_sie
 {
@@ -7,8 +10,12 @@ namespace Orange_Spotkajmy_sie
     {
         static void Main(string[] args)
         {
+            //how long will the meeting take?
+            //Change to set up meeting duration meeting time
+            var meetingDurationInMinutes = 60;
+
             //create two calendars to compare
-            var calendar1 = new DataModel
+            var calendarObj1 = new DataModel
             {
                 working_hours = new Working_Hours
                 {
@@ -20,7 +27,7 @@ namespace Orange_Spotkajmy_sie
                     new Planned_Meeting
                     {
                         start = "09:00",
-                        end = "10:30"
+                        end = "11:30"
                     },
                     new Planned_Meeting
                     {
@@ -34,7 +41,7 @@ namespace Orange_Spotkajmy_sie
                     }
                 }
             };
-            var calendar2 = new DataModel
+            var calendarObj2 = new DataModel
             {
                 working_hours = new Working_Hours
                 {
@@ -66,36 +73,57 @@ namespace Orange_Spotkajmy_sie
                 }
             };
 
+            //Load JSON from file.
+            var pathToCalendar1 = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                @"calendar1.json");
+            var pathToCalendar2 = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                @"calendar2.json");
+
+            if (File.Exists(pathToCalendar1) && File.Exists(pathToCalendar2))
+            {
+                var calendar1 = JsonConvert.DeserializeObject<DataModel>(File.ReadAllText(pathToCalendar1));
+                var calendar2 = JsonConvert.DeserializeObject<DataModel>(File.ReadAllText(pathToCalendar2));
+                //Check calendar for data from file
+                CheckCalendar(calendar1, calendar2, meetingDurationInMinutes);
+            }
+            else
+            {
+                Console.WriteLine("Calendar files not found");
+            }
+
             /*
              * check these calendars with CheckCalendar() method
              * and you will see the available appointments
             */
 
-            CheckCalendar(calendar1, calendar2);
+            //Check calendar for data fromn DataModel obj
+            CheckCalendar(calendarObj1, calendarObj2, meetingDurationInMinutes);
         }
 
-        private static void CheckCalendar(DataModel firstCalendar, DataModel secondCalendar)
+        private static void CheckCalendar(DataModel firstCalendar, DataModel secondCalendar, int duration)
         {
             var c1 = CreateNewCalendar(firstCalendar);
-            var c3 = CreateNewCalendar(secondCalendar);
+            var c2 = CreateNewCalendar(secondCalendar);
 
             var freeTimeIntervalsForC1 = c1.GetFreeTimeIntervals();
-            var freeTimeIntervalsForC2 = c3.GetFreeTimeIntervals();
+            var freeTimeIntervalsForC2 = c2.GetFreeTimeIntervals();
 
-            var intersectedFreeTimes = GetFreeTimeIntersections(freeTimeIntervalsForC1, freeTimeIntervalsForC2);
+            var intersectedFreeTimes =
+                GetFreeTimeIntersections(freeTimeIntervalsForC1, freeTimeIntervalsForC2, duration);
+
+            Console.WriteLine("Available meetings:");
             foreach (var item in intersectedFreeTimes)
             {
-                Console.WriteLine("Start: {0}, end: {1}", item.Start, item.End);
+                Console.WriteLine($"Start: {item.Start} end: {item.End}");
             }
 
             Console.WriteLine();
         }
 
         static List<DateTimeInterval> GetFreeTimeIntersections(List<DateTimeInterval> freeIntersection1,
-            List<DateTimeInterval> freeIntersection2)
+            List<DateTimeInterval> freeIntersection2, int minutes)
         {
             var intersectedFreeTimes = new List<DateTimeInterval>();
-
             for (int i = 0; i < freeIntersection1.Count; i++)
             {
                 for (int j = 0; j < freeIntersection2.Count; j++)
@@ -105,15 +133,19 @@ namespace Orange_Spotkajmy_sie
                     {
                         var timeIntervalStart = Math.Max(freeIntersection1[i].Start.Ticks,
                             freeIntersection2[j].Start.Ticks);
-                        var timeIntervalEnd = Math.Min(freeIntersection1[i].End.Ticks, freeIntersection2[j].End.Ticks);
-                        var is30Minutes = timeIntervalEnd - timeIntervalStart;
 
-                        if (TimeSpan.FromTicks(is30Minutes) >= TimeSpan.FromMinutes(30))
+                        var timeIntervalEnd = Math.Min(freeIntersection1[i].End.Ticks, freeIntersection2[j].End.Ticks);
+
+                        //check how much meeting availabale in this time interval
+                        var minutesIn = TimeSpan.FromMinutes(minutes).Ticks;
+                        var meetingsInInterval = (timeIntervalEnd - timeIntervalStart) / minutesIn;
+
+                        for (var k = 0; k < meetingsInInterval; k++)
                         {
                             var timeInterval = new DateTimeInterval
                             {
-                                Start = TimeSpan.FromTicks(timeIntervalStart),
-                                End = TimeSpan.FromTicks(timeIntervalEnd),
+                                Start = TimeSpan.FromTicks(timeIntervalStart + (minutesIn * k)),
+                                End = TimeSpan.FromTicks(timeIntervalStart + (minutesIn * (k + 1))),
                             };
                             intersectedFreeTimes.Add(timeInterval);
                         }
