@@ -15,7 +15,7 @@ namespace Orange_Spotkajmy_sie
             var meetingDurationInMinutes = 0;
 
             //Set up default 30 minutes duration
-            if (meetingDurationInMinutes == 0)
+            if (meetingDurationInMinutes <= 0)
             {
                 meetingDurationInMinutes = 30;
             }
@@ -91,6 +91,7 @@ namespace Orange_Spotkajmy_sie
                 var calendar2 = JsonConvert.DeserializeObject<DataModel>(File.ReadAllText(pathToCalendar2));
                 //Check calendar for data from file
                 CheckCalendar(calendar1, calendar2, meetingDurationInMinutes);
+
             }
             else
             {
